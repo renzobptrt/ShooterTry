@@ -38,8 +38,13 @@ protected:
 	/* Called whtn the Fire Button is pressed */
 	void FireWeapon();
 	
-	/**/
 	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
+
+	// Set bAiming to true or false with button is pressed.
+	void AimingButtonPressed();
+	void AimingButtonReleased();
+
+	void CameraInterpZoom(float DeltaTime);
 
 public:	
 	// Called every frame
@@ -86,6 +91,23 @@ private:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Combat,meta=(AllowPrivateAccess="true"))
 	class UParticleSystem* BeamParticles;
 
+	// True when aiming
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category=Combat,meta=(AllowPrivateAccess="true"))
+	bool bAiming;
+	
+	// Default camera field of view value
+	float CameraDefaultFOV;
+
+	// Field of view value for when zoomed in
+	float CameraZoomedFOV;
+
+	// Current field of view this frame
+	float CameraCurrentFOV;
+
+	// Interp speed for zooming when aiming
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	float ZoomInterpSpeed;
+	
 public:
 	/** Returns CameraBoom subobject*/
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

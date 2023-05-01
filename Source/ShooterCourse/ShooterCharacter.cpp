@@ -39,9 +39,13 @@ AShooterCharacter::AShooterCharacter():
 	CrosshairInAirFactor(0.f),
 	CrosshairAimFactor(0.f),
 	CrosshairShootingFactor(0.f),
-	//Bullet fire timer variables
+	// Bullet fire timer variables
 	ShootTimeDuration(0.05f),
-	bFiringBullet(false)
+	bFiringBullet(false),
+	// Automatic fire variables
+	AutomaticFireRate(0.1f),
+	bShouldFire(true),
+	bFireButtonPressed(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -379,6 +383,36 @@ void AShooterCharacter::CalculatesCrosshairSpread(float DeltaTime)
 		0.5f + CrosshairVelocityFactor + CrosshairInAirFactor - CrosshairAimFactor + CrosshairShootingFactor;
 }
 
+void AShooterCharacter::FireButtonPressed()
+{
+	bFireButtonPressed = true;
+	StartFireTimer();
+}
+
+void AShooterCharacter::FireButtonReleased()
+{
+	bFireButtonPressed = false;
+}
+
+void AShooterCharacter::StartFireTimer()
+{
+	if(bShouldFire)
+	{
+		FireWeapon();
+		bShouldFire = false;
+		GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AShooterCharacter::AutoFireReset, AutomaticFireRate);
+	}
+}
+
+void AShooterCharacter::AutoFireReset()
+{
+	bShouldFire = true;
+	if(bFireButtonPressed)
+	{
+		StartFireTimer();
+	}
+}
+
 void AShooterCharacter::StartCrosshairBulletFire()
 {
 	bFiringBullet = true;
@@ -423,7 +457,8 @@ void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AShooterCharacter::FireWeapon);
+	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AShooterCharacter::FireButtonPressed);
+	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AShooterCharacter::FireButtonReleased);
 	
 	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &AShooterCharacter::AimingButtonPressed);
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &AShooterCharacter::AimingButtonReleased);

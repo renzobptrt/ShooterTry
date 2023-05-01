@@ -78,6 +78,10 @@ private:
 	// Particles spawned upon bullet impact
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Combat,meta=(AllowPrivateAccess="true"))
 	class UParticleSystem* ImpactParticles;
+	
+	// Smoke trial for bullets
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Combat,meta=(AllowPrivateAccess="true"))
+	class UParticleSystem* BeamParticles;
 
 public:
 	/** Returns CameraBoom subobject*/

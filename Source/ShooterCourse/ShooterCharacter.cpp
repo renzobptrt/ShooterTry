@@ -38,7 +38,10 @@ AShooterCharacter::AShooterCharacter():
 	CrosshairVelocityFactor(0.f),
 	CrosshairInAirFactor(0.f),
 	CrosshairAimFactor(0.f),
-	CrosshairShootingFactor(0.f)
+	CrosshairShootingFactor(0.f),
+	//Bullet fire timer variables
+	ShootTimeDuration(0.05f),
+	bFiringBullet(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -221,6 +224,9 @@ void AShooterCharacter::FireWeapon()
 		AnimInstance->Montage_Play(HipFireMontage);
 		AnimInstance->Montage_JumpToSection(FName("StartFire"));
 	}
+	
+	// Start bullet fire timer for crosshairs
+	StartCrosshairBulletFire();
 }
 
 bool AShooterCharacter::GetBeamEndLocation(
@@ -236,7 +242,6 @@ bool AShooterCharacter::GetBeamEndLocation(
 
 	// Get screen space location of crosshairs
 	FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
-	CrosshairLocation.Y -= 50.f;
 	FVector CrosshairWorldPosition;
 	FVector CrosshairWorldDirection;
 
@@ -359,8 +364,35 @@ void AShooterCharacter::CalculatesCrosshairSpread(float DeltaTime)
 		// Spread crosshairs vack to nomral very quickly
 		CrosshairAimFactor = FMath:: FInterpTo(CrosshairAimFactor, 0.f, DeltaTime, 30.f);
 	}
+
+	// True 0.05 second after firing
+	if(bFiringBullet)
+	{
+		CrosshairShootingFactor = FMath:: FInterpTo(CrosshairShootingFactor, 0.3f, DeltaTime, 60.f );
+	}
+	else
+	{
+		CrosshairShootingFactor = FMath:: FInterpTo(CrosshairShootingFactor, 0.f, DeltaTime, 60.f );
+	}
 	
-	CrosshairSpreadMultiplier = 0.5f + CrosshairVelocityFactor + CrosshairInAirFactor - CrosshairAimFactor;
+	CrosshairSpreadMultiplier =
+		0.5f + CrosshairVelocityFactor + CrosshairInAirFactor - CrosshairAimFactor + CrosshairShootingFactor;
+}
+
+void AShooterCharacter::StartCrosshairBulletFire()
+{
+	bFiringBullet = true;
+
+	GetWorldTimerManager().SetTimer(
+		CrosshairShootTimer,
+		this,
+		&AShooterCharacter::FinishCrosshairBulletFire,
+		ShootTimeDuration);
+}
+
+void AShooterCharacter::FinishCrosshairBulletFire()
+{
+	bFiringBullet = false;
 }
 
 // Called every frame

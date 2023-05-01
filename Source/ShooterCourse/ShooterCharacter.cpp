@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AShooterCharacter::AShooterCharacter():
@@ -101,6 +102,23 @@ void AShooterCharacter::FireWeapon()
 		if(MuzzleFlash)
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),MuzzleFlash, SocketTransform);
+		}
+
+		FHitResult FireHit;
+		const FVector Start { SocketTransform.GetLocation() };
+		const FQuat Rotation { SocketTransform.GetRotation() };
+		const FVector RotationAxis { Rotation.GetAxisX() };
+		const FVector End {Start + RotationAxis * 50'000.f };
+		GetWorld()->LineTraceSingleByChannel(FireHit, Start, End, ECC_Visibility);
+		if(FireHit.bBlockingHit)
+		{
+			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.f);
+			DrawDebugPoint(GetWorld(), FireHit.Location, 5.f, FColor::Red, false, 2.f);
+
+			if(ImpactParticles)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, FireHit.Location);
+			}
 		}
 	}
 

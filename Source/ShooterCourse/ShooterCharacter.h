@@ -165,6 +165,10 @@ private:
 
 	// Aim component for crosshairs spread
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Crosshair,  meta=(AllowPrivateAccess="true"))
+	float CrosshairInAirFactor;
+	
+	// Aim component for crosshairs spread
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Crosshair,  meta=(AllowPrivateAccess="true"))
 	float CrosshairAimFactor;
 	
 	// Shooting component for crosshairs spread

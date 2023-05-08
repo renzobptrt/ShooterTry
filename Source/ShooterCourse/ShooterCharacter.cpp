@@ -10,6 +10,7 @@
 #include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "BulletHitInterface.h"
 
 // Sets default values
 AShooterCharacter::AShooterCharacter():
@@ -160,20 +161,34 @@ void AShooterCharacter::FireWeapon()
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),MuzzleFlash, SocketTransform);
 		}
 
-		FVector BeamEnd;
+		FHitResult BeamHitResult;
 		bool bBeamEnd = GetBeamEndLocation(
 			SocketTransform.GetLocation(),
-			BeamEnd);
+			BeamHitResult);
 
 		if(bBeamEnd)
 		{
-			// Spawn impact particles after updating BeamEndPoint
-			if(ImpactParticles)
+
+			// Does hit Actor implement BulletHitInterface?
+			if(BeamHitResult.Actor.IsValid())
 			{
-				UGameplayStatics::SpawnEmitterAtLocation(
-					GetWorld(),
-					ImpactParticles,
-					BeamEnd);
+				IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.Actor.Get());
+				if(BulletHitInterface)
+				{
+					BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+				}
+			}
+			else
+			{
+				// Spawn impact particles after updating BeamEndPoint
+				// Spwan default particles
+				if(ImpactParticles)
+				{
+					UGameplayStatics::SpawnEmitterAtLocation(
+						GetWorld(),
+						ImpactParticles,
+						BeamHitResult.Location);
+				}
 			}
 			
 			if (BeamParticles)
@@ -184,7 +199,7 @@ void AShooterCharacter::FireWeapon()
 					SocketTransform);
 				if(Beam)
 				{
-					Beam->SetVectorParameter(FName("Target"), BeamEnd);
+					Beam->SetVectorParameter(FName("Target"), BeamHitResult.Location);
 				}
 			}
 		}
@@ -235,8 +250,11 @@ void AShooterCharacter::FireWeapon()
 
 bool AShooterCharacter::GetBeamEndLocation(
 	const FVector& MuzzleSocketLocation,
-	FVector& OutBeamLocation)
+	FHitResult& OutHitResult)
+	//FVector& OutBeamLocation)
 {
+	FVector OutBeamLocation;
+	
 	// Get current size of the viewport
 	FVector2D ViewportSize;
 	if(GEngine && GEngine->GameViewport)
@@ -278,18 +296,19 @@ bool AShooterCharacter::GetBeamEndLocation(
 		}
 
 		// Perform a second trace, this time from the gun barrel
-		FHitResult WeaponTraceHit;
+		//FHitResult WeaponTraceHit;
 		const FVector WeaponTraceStart { MuzzleSocketLocation };
 		const FVector WeaponTraceEnd { OutBeamLocation };
 		GetWorld()->LineTraceSingleByChannel(
-			WeaponTraceHit,
+			OutHitResult,
 			WeaponTraceStart,
 			WeaponTraceEnd,
 			ECC_Visibility);
 
-		if(WeaponTraceHit.bBlockingHit) //Objects between barrel and BeamEndPoint?
+		if(OutHitResult.bBlockingHit) //Objects between barrel and BeamEndPoint?
 		{
-			OutBeamLocation = WeaponTraceHit.Location;
+			OutHitResult.Location = OutBeamLocation;
+			return false;
 		}
 
 		return true;
